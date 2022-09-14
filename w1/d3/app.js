@@ -1,35 +1,57 @@
 const express = require("express");
 const fs = require("fs");
+const bodyParser = require("body-parser");
 
-const app = express();
+const server = express();
+server.use(bodyParser.json());
 
-const server = http.createServer((request, response) => {
-    console.log("request received");
-    fs.readFile("users.json", "utf-8", (err, data) = >
-    if (err) throw err;
-    if(request.method === "GET") {
-        server.get("/users.json", logger, (req, res) => {
-            
-        res.send("users.json")
-    })
-    })
-})
+const getUsers = () => {
+  const data = fs.readFileSync("users.json", "utf-8");
+  console.log("data", data);
+  return JSON.parse(data).users;
+};
 
-server.get("//", logger, (request, response) => {
-        fs.readFile("index.html", "utf8", (error, data) => {
-          if (error) {
-            console.log("error on read file", error);
-          } else {
-            console.log("content file", data);
-            response.writeHead(200, { "content-type": "text/html" });
-            response.write(data);
-            res.send();
-          }
-        });
-      }
-)
+const updateUsers = (updatedUsers) => {
+  fs.writeFileSync("users.json", JSON.stringify({ users: updatedUsers }));
+};
 
+server.get("/", (request, response) => {
+  response.send("Hello!");
+});
 
-app.listen(3000, () => {
-    console.log("Server is running on port 3000");
+server.get("/users", (request, response) => {
+  const users = getUsers();
+  console.log("users", users);
+  response.json(users);
+});
+
+server.post("/users", (request, response) => {
+  const users = getUsers();
+  console.log("body", request.body);
+  const newUser = { ...request.body, id: users.length + 1 };
+  const updatedUsers = [...users, newUser];
+  updateUsers(updatedUsers);
+  response.json(newUser);
+});
+
+server.put("/users", (request, response) => {
+  const users = getUsers();
+  const updatedUser = { ...request.body };
+  const updatedUsers = users.map((user) => {
+    if (user.id === updatedUser.id) {
+      return updatedUser;
+    }
+    return user;
   });
+  updateUsers(updatedUsers);
+  response.json({ message: "user updated" });
+});
+
+server.delete("/users", (request, response) => {
+  const users = getUsers();
+  const updatedUsers = users.filter((user) => user.id !== request.body.id);
+  updateUsers(updatedUsers);
+  response.json({ message: "User deleted" });
+});
+
+server.listen(5001, () => console.log("server running on port 5001"));
